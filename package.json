@@ -1,17 +1,27 @@
 {
   "name": "sistema-livro-obito",
   "version": "1.0.0",
-  "description": "Sistema de Livro de Óbito - São Francisco",
-  "main": "server.js",
+  "description": "Sistema de Livro de Óbito - São Francisco Serviços Funerários",
+  "main": "app.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js"
+    "start": "node app.js",
+    "dev": "node app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "engines": {
+    "node": ">=14.0.0",
+    "npm": ">=6.0.0"
   },
   "dependencies": {
-    "sqlite3": "^5.1.6",
-    "nodemailer": "^6.9.7"
+    "express": "^4.18.2",
+    "nodemailer": "^6.9.7",
+    "dotenv": "^16.3.1"
   },
-  "keywords": ["obito", "funeraria", "registro"],
-  "author": "São Francisco",
-  "license": "ISC"
+  "keywords": ["obito", "funeraria", "registro", "sao-francisco", "nodejs", "express"],
+  "author": "São Francisco Serviços Funerários",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/suzuukyy/livro-de-obito.git"
+  }
 }
