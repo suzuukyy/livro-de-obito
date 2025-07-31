@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste - Registros do Banco</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .registro { border: 1px solid #ccc; margin: 10px 0; padding: 10px; }
+        .erro { color: red; }
+        .sucesso { color: green; }
+        button { padding: 10px 20px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>🔍 TESTE - Registros do Banco de Dados</h1>
+    
+    <button onclick="testarAPI()">🔄 CARREGAR REGISTROS DO BANCO</button>
+    <button onclick="limparResultados()">🧹 LIMPAR</button>
+    
+    <div id="resultado"></div>
+    <div id="registros"></div>
+
+    <script>
+        async function testarAPI() {
+            const resultado = document.getElementById('resultado');
+            const registrosDiv = document.getElementById('registros');
+            
+            resultado.innerHTML = '<p>🔄 Carregando registros...</p>';
+            registrosDiv.innerHTML = '';
+            
+            try {
+                console.log('🔄 Fazendo requisição para /api/registros...');
+                const response = await fetch('/api/registros');
+                console.log('📊 Status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`Erro HTTP: ${response.status}`);
+                }
+                
+                const registros = await response.json();
+                console.log('✅ Registros recebidos:', registros);
+                
+                resultado.innerHTML = `<p class="sucesso">✅ SUCESSO! ${registros.length} registros encontrados no banco</p>`;
+                
+                if (registros.length === 0) {
+                    registrosDiv.innerHTML = '<p>⚠️ Nenhum registro encontrado no banco de dados</p>';
+                    return;
+                }
+                
+                // Exibir todos os registros
+                let html = '<h2>📋 REGISTROS DO BANCO:</h2>';
+                registros.forEach((registro, index) => {
+                    html += `
+                        <div class="registro">
+                            <strong>Registro ${index + 1}:</strong><br>
+                            <strong>ID:</strong> ${registro.id}<br>
+                            <strong>Nome:</strong> ${registro.nome}<br>
+                            <strong>Data:</strong> ${registro.data}<br>
+                            <strong>Serviços:</strong> ${registro.servicos}<br>
+                            <strong>Cartório:</strong> ${registro.cartorio}<br>
+                            <strong>Endereço:</strong> ${registro.endereco}<br>
+                            <strong>Cemitério:</strong> ${registro.cemiterio}<br>
+                            <strong>Timestamp:</strong> ${registro.timestamp}<br>
+                        </div>
+                    `;
+                });
+                
+                registrosDiv.innerHTML = html;
+                
+            } catch (error) {
+                console.error('❌ Erro:', error);
+                resultado.innerHTML = `<p class="erro">❌ ERRO: ${error.message}</p>`;
+            }
+        }
+        
+        function limparResultados() {
+            document.getElementById('resultado').innerHTML = '';
+            document.getElementById('registros').innerHTML = '';
+        }
+        
+        // Carregar automaticamente ao abrir a página
+        window.addEventListener('load', testarAPI);
+    </script>
+</body>
+</html>

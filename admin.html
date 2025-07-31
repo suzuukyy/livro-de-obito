@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Livro de Óbito - Administração</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+</head>
+<body>
+    <div class="admin-container">
+        <div class="admin-header">
+            <div class="header-content">
+                <div class="empresa-info">
+                    <div class="empresa-logo-section">
+                        <div class="empresa-nome-admin">São Francisco</div>
+                        <div class="empresa-subtitulo">Serviços Funerários</div>
+                    </div>
+                    <h1>📖 Sistema de Livro de Óbito</h1>
+                </div>
+                <button id="logout-btn" class="logout-btn">Sair</button>
+            </div>
+        </div>
+        
+        <div class="botao-container">
+            <button id="btn-novo-registro" class="btn-novo-registro">
+                ➕ Criar Novo Registro de Óbito
+            </button>
+        </div>
+        
+        <div id="form-container" class="form-container" style="display: none;">
+            <div class="form-header">
+                <h2>📝 Novo Registro de Óbito</h2>
+                <button type="button" id="btn-cancelar" class="btn-cancelar">✖️ Cancelar</button>
+            </div>
+            <form id="registro-form">
+                <div class="form-row">
+                    <div class="form-group-admin">
+                        <label for="nome">Nome do Falecido:</label>
+                        <input type="text" id="nome" name="nome" required>
+                    </div>
+                    <div class="form-group-admin">
+                        <label for="data">Data do Óbito:</label>
+                        <input type="date" id="data" name="data" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group-admin">
+                        <label for="servicos">Serviços:</label>
+                        <input type="text" id="servicos" name="servicos" required placeholder="Digite o tipo de serviço">
+                    </div>
+                    <div class="form-group-admin">
+                        <label for="cartorio">Cartório:</label>
+                        <input type="text" id="cartorio" name="cartorio" required placeholder="Nome do cartório responsável">
+                    </div>
+                </div>
+                
+                <div class="form-row full-width">
+                    <div class="form-group-admin">
+                        <label for="endereco">Endereço:</label>
+                        <textarea id="endereco" name="endereco" required placeholder="Endereço completo do falecido"></textarea>
+                    </div>
+                </div>
+                
+                <div class="form-row full-width">
+                    <div class="form-group-admin">
+                        <label for="cemiterio">Cemitério:</label>
+                        <input type="text" id="cemiterio" name="cemiterio" required placeholder="Nome do cemitério">
+                    </div>
+                </div>
+                
+                <button type="submit" class="submit-btn">Salvar Registro</button>
+                <div id="sucesso-msg" class="sucesso-msg"></div>
+            </form>
+        </div>
+        
+        <!-- Botão Configurar Email -->
+        <div class="form-container" style="margin-top: 30px;">
+            <button id="btn-configurar-email" class="btn-configurar-email" onclick="toggleConfigEmail()">
+                Configurar Email
+            </button>
+            
+            <!-- Configuração de Email (oculta por padrão) -->
+            <div id="email-config-section" class="email-config-section" style="display: none;">
+                <h3>Configuração de Backup por Email</h3>
+                <div class="email-config-container">
+                    <div class="email-config-header">
+                        <p>Configure seu email para receber automaticamente um PDF de cada novo registro de óbito.</p>
+                    </div>
+                    <div class="email-config-form">
+                        <div class="form-group-email">
+                            <label for="email-backup">Email para Backup:</label>
+                            <input type="email" id="email-backup" placeholder="seu.email@exemplo.com" onchange="salvarConfigEmail()">
+                        </div>
+                        <div class="email-config-status">
+                            <div id="email-status" class="email-status">
+                                <span id="email-status-text">Email não configurado</span>
+                            </div>
+                            <button id="btn-testar-email" class="btn-testar-email" onclick="testarEmail()" disabled>
+                                Testar Email
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-container" style="margin-top: 30px;">
+            <h2>📋 Livro de Registros de Óbito</h2>
+            
+            <!-- Campo de Busca -->
+            <div class="busca-container">
+                <div class="busca-header">
+                    <h3>🔍 Buscar Registros</h3>
+                </div>
+                
+                <!-- Busca por Nome -->
+                <div class="busca-input-container">
+                    <input type="text" id="campo-busca" placeholder="Digite o nome do falecido para buscar..." onkeyup="buscarRegistros()">
+                </div>
+                
+                <!-- Busca por Serviços -->
+                <div class="busca-servicos-container">
+                    <div class="busca-servicos-header">
+                        <h4>💼 Filtrar por Serviços</h4>
+                    </div>
+                    <div class="busca-servicos-input">
+                        <input type="text" id="campo-servicos" placeholder="Digite o tipo de serviço para buscar..." onkeyup="buscarRegistros()">
+                    </div>
+                </div>
+                
+                <!-- Busca por Data -->
+                <div class="busca-data-container">
+                    <div class="busca-data-header">
+                        <h4>📅 Filtrar por Data do Registro</h4>
+                    </div>
+                    <div class="busca-data-inputs">
+                        <div class="data-input-group">
+                            <label for="data-inicio">Data Início:</label>
+                            <input type="date" id="data-inicio" onchange="buscarRegistros()">
+                        </div>
+                        <div class="data-input-group">
+                            <label for="data-fim">Data Fim:</label>
+                            <input type="date" id="data-fim" onchange="buscarRegistros()">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Botões de Ação -->
+                <div class="busca-acoes">
+                    <button id="btn-limpar-busca" class="btn-limpar-busca" onclick="limparBusca()" title="Limpar busca">
+                        🧹 Limpar Filtros
+                    </button>
+                    <button id="btn-hoje" class="btn-filtro-rapido" onclick="filtrarHoje()" title="Registros de hoje">
+                        📅 Hoje
+                    </button>
+                    <button id="btn-semana" class="btn-filtro-rapido" onclick="filtrarSemana()" title="Registros desta semana">
+                        📅 Esta Semana
+                    </button>
+                    <button id="btn-mes" class="btn-filtro-rapido" onclick="filtrarMes()" title="Registros deste mês">
+                        📅 Este Mês
+                    </button>
+                </div>
+                
+                <div id="resultado-busca" class="resultado-busca" style="display: none;"></div>
+            </div>
+            
+            <div class="tabela-container">
+                <table id="tabela-registros" class="tabela-obitos">
+                    <thead>
+                        <tr>
+                            <th>Nº</th>
+                            <th>Serviços</th>
+                            <th>Data do Óbito</th>
+                            <th>Cartório</th>
+                            <th>Nome do Falecido</th>
+                            <th>Endereço</th>
+                            <th>Cemitério</th>
+                            <th>Data de Registro</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corpo-tabela">
+                        <!-- Os registros serão inseridos aqui -->
+                    </tbody>
+                </table>
+                <div id="sem-registros" class="sem-registros" style="display: none;">
+                    <p>📋 Nenhum registro de óbito encontrado.</p>
+                    <p>Clique em "Criar Novo Registro de Óbito" para adicionar o primeiro registro.</p>
+                </div>
+            </div>
+            
+            <!-- Controles de Paginação -->
+            <div id="paginacao-container" class="paginacao-container">
+                <div class="paginacao-info">
+                    <span id="info-paginacao"></span>
+                    <button id="btn-gerar-pdf" class="btn-gerar-pdf" onclick="gerarPDFPagina()" title="Gerar PDF da página atual">
+                        📝 Gerar PDF desta Página
+                    </button>
+                </div>
+                <div class="paginacao-controles">
+                    <button id="btn-primeira" class="btn-paginacao" onclick="irParaPagina(1)" title="Primeira página">
+                        Primeira
+                    </button>
+                    <button id="btn-anterior" class="btn-paginacao" onclick="paginaAnterior()" title="Página anterior">
+                        ◀ Anterior
+                    </button>
+                    <div id="numeros-pagina" class="numeros-pagina">
+                        <!-- Números das páginas serão inseridos aqui -->
+                    </div>
+                    <button id="btn-proxima" class="btn-paginacao" onclick="proximaPagina()" title="Próxima página">
+                        Próxima ▶
+                    </button>
+                    <button id="btn-ultima" class="btn-paginacao" onclick="irParaUltimaPagina()" title="Última página">
+                        Última ⏩
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+    
+    <style>
+        .registro-item {
+            background: white;
+            border: 1px solid #e1e5e9;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+        
+        .registro-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e1e5e9;
+        }
+        
+        .registro-header strong {
+            font-size: 1.1rem;
+            color: #333;
+        }
+        
+        .data-registro {
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.9rem;
+        }
+        
+        .registro-detalhes p {
+            margin-bottom: 8px;
+            color: #555;
+        }
+        
+        .registro-detalhes strong {
+            color: #333;
+        }
+        
+        .sem-registros {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            padding: 40px;
+        }
+        
+        #lista-registros h3 {
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+    </style>
+</body>
+</html>

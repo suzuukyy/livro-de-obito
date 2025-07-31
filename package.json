@@ -1,0 +1,17 @@
+{
+  "name": "sistema-livro-obito",
+  "version": "1.0.0",
+  "description": "Sistema de Livro de Óbito - São Francisco",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "sqlite3": "^5.1.6",
+    "nodemailer": "^6.9.7"
+  },
+  "keywords": ["obito", "funeraria", "registro"],
+  "author": "São Francisco",
+  "license": "ISC"
+}

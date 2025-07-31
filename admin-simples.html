@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Livro de Óbito - São Francisco</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }
+        h1 { color: #333; text-align: center; }
+        .form-group { margin: 15px 0; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
+        button { background: #007bff; color: white; padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; margin: 10px 5px; }
+        button:hover { background: #0056b3; }
+        .registro { border: 1px solid #ddd; margin: 10px 0; padding: 15px; border-radius: 4px; background: #f9f9f9; }
+        .sucesso { color: green; padding: 10px; background: #d4edda; border-radius: 4px; margin: 10px 0; }
+        .erro { color: red; padding: 10px; background: #f8d7da; border-radius: 4px; margin: 10px 0; }
+        #registros { margin-top: 30px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📋 Sistema de Livro de Óbito - São Francisco</h1>
+        
+        <div id="mensagens"></div>
+        
+        <h2>➕ Novo Registro de Óbito</h2>
+        <form id="formulario">
+            <div class="form-group">
+                <label>Nome do Falecido:</label>
+                <input type="text" id="nome" required>
+            </div>
+            <div class="form-group">
+                <label>Data do Óbito:</label>
+                <input type="date" id="data" required>
+            </div>
+            <div class="form-group">
+                <label>Serviços:</label>
+                <input type="text" id="servicos" required>
+            </div>
+            <div class="form-group">
+                <label>Cartório:</label>
+                <input type="text" id="cartorio" required>
+            </div>
+            <div class="form-group">
+                <label>Endereço:</label>
+                <input type="text" id="endereco" required>
+            </div>
+            <div class="form-group">
+                <label>Cemitério:</label>
+                <input type="text" id="cemiterio" required>
+            </div>
+            <button type="submit">💾 Salvar Registro</button>
+            <button type="button" onclick="carregarRegistros()">🔄 Atualizar Lista</button>
+        </form>
+        
+        <div id="registros">
+            <h2>📋 Registros de Óbito</h2>
+            <div id="lista-registros"></div>
+        </div>
+    </div>
+
+    <script>
+        // Função para mostrar mensagens
+        function mostrarMensagem(texto, tipo = 'sucesso') {
+            const div = document.getElementById('mensagens');
+            div.innerHTML = `<div class="${tipo}">${texto}</div>`;
+            setTimeout(() => div.innerHTML = '', 5000);
+        }
+
+        // Função para salvar registro
+        async function salvarRegistro(evento) {
+            evento.preventDefault();
+            
+            const registro = {
+                nome: document.getElementById('nome').value,
+                data: document.getElementById('data').value,
+                servicos: document.getElementById('servicos').value,
+                cartorio: document.getElementById('cartorio').value,
+                endereco: document.getElementById('endereco').value,
+                cemiterio: document.getElementById('cemiterio').value,
+                timestamp: new Date().toISOString()
+            };
+            
+            try {
+                console.log('🔄 Salvando registro:', registro);
+                
+                const response = await fetch('/api/registros', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(registro)
+                });
+                
+                if (response.ok) {
+                    const resultado = await response.json();
+                    console.log('✅ Registro salvo:', resultado);
+                    mostrarMensagem('✅ Registro salvo com sucesso!');
+                    document.getElementById('formulario').reset();
+                    carregarRegistros(); // Atualizar lista imediatamente
+                } else {
+                    throw new Error('Erro ao salvar');
+                }
+            } catch (error) {
+                console.error('❌ Erro:', error);
+                mostrarMensagem('❌ Erro ao salvar registro', 'erro');
+            }
+        }
+
+        // Função para carregar registros
+        async function carregarRegistros() {
+            try {
+                console.log('🔄 Carregando registros...');
+                
+                const response = await fetch('/api/registros');
+                const registros = await response.json();
+                
+                console.log('✅ Registros carregados:', registros);
+                
+                const lista = document.getElementById('lista-registros');
+                
+                if (!registros || registros.length === 0) {
+                    lista.innerHTML = '<p>⚠️ Nenhum registro encontrado</p>';
+                    return;
+                }
+                
+                // Ordenar por data (mais recentes primeiro)
+                registros.sort((a, b) => new Date(b.data) - new Date(a.data));
+                
+                let html = `<p><strong>Total: ${registros.length} registros</strong></p>`;
+                
+                registros.forEach((registro, index) => {
+                    const dataFormatada = new Date(registro.data).toLocaleDateString('pt-BR');
+                    html += `
+                        <div class="registro">
+                            <strong>Registro ${index + 1}</strong><br>
+                            <strong>Nome:</strong> ${registro.nome}<br>
+                            <strong>Data do Óbito:</strong> ${dataFormatada}<br>
+                            <strong>Serviços:</strong> ${registro.servicos}<br>
+                            <strong>Cartório:</strong> ${registro.cartorio}<br>
+                            <strong>Endereço:</strong> ${registro.endereco}<br>
+                            <strong>Cemitério:</strong> ${registro.cemiterio}<br>
+                            <small>Cadastrado em: ${new Date(registro.timestamp).toLocaleString('pt-BR')}</small>
+                        </div>
+                    `;
+                });
+                
+                lista.innerHTML = html;
+                console.log('✅ Lista atualizada com sucesso!');
+                
+            } catch (error) {
+                console.error('❌ Erro ao carregar:', error);
+                document.getElementById('lista-registros').innerHTML = '<p class="erro">❌ Erro ao carregar registros</p>';
+            }
+        }
+
+        // Configurar eventos
+        document.getElementById('formulario').addEventListener('submit', salvarRegistro);
+        
+        // Carregar registros ao abrir a página
+        window.addEventListener('load', carregarRegistros);
+    </script>
+</body>
+</html>

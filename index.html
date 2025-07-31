@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Livro de Óbito - Login</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-box">
+            <div class="logo">
+                <div class="empresa-nome">São Francisco</div>
+                <div class="empresa-subtitulo-login">Serviços Funerários</div>
+                <div class="empresa-cnpj-login">CNPJ: 84.522.143/0001-53</div>
+                <h1>📖 Sistema de Livro de Óbito</h1>
+            </div>
+            <form id="loginForm" class="login-form">
+                <h2>Acesso Administrativo</h2>
+                <div class="form-group">
+                    <label for="usuario">Usuário:</label>
+                    <input type="text" id="usuario" name="usuario" required>
+                </div>
+                <div class="form-group">
+                    <label for="senha">Senha:</label>
+                    <input type="password" id="senha" name="senha" required>
+                </div>
+                <button type="submit" class="login-btn">Entrar</button>
+                <div id="erro-msg" class="erro-msg"></div>
+            </form>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
