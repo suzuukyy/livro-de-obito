@@ -12,6 +12,19 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('.'));
 
+// Configurar CORS
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+    
+    if (req.method === 'OPTIONS') {
+        res.sendStatus(200);
+    } else {
+        next();
+    }
+});
+
 // Arquivo de dados
 const REGISTROS_FILE = path.join(__dirname, 'registros.json');
 
@@ -70,6 +83,54 @@ app.post('/api/registros', (req, res) => {
         }
     } catch (error) {
         console.error('Erro ao criar registro:', error);
+        res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+});
+
+// Rota PUT para atualizar registro
+app.put('/api/registros/:id', (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        const dadosAtualizados = req.body;
+        const registros = lerRegistros();
+        
+        const indice = registros.findIndex(r => r.id === id);
+        if (indice === -1) {
+            return res.status(404).json({ error: 'Registro não encontrado' });
+        }
+        
+        // Manter o ID original e atualizar timestamp
+        dadosAtualizados.id = id;
+        dadosAtualizados.timestamp = new Date().toISOString();
+        
+        // Atualizar o registro
+        registros[indice] = { ...registros[indice], ...dadosAtualizados };
+        
+        if (salvarRegistros(registros)) {
+            res.json({ success: true, registro: registros[indice] });
+        } else {
+            res.status(500).json({ error: 'Erro ao atualizar registro' });
+        }
+    } catch (error) {
+        console.error('Erro ao atualizar registro:', error);
+        res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+});
+
+// Rota GET para buscar registro específico por ID
+app.get('/api/registros/:id', (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        const registros = lerRegistros();
+        
+        const registro = registros.find(r => r.id === id);
+        if (!registro) {
+            return res.status(404).json({ error: 'Registro não encontrado' });
+        }
+        
+        res.json(registro);
+    } catch (error) {
+        console.error('Erro ao buscar registro:', error);
         res.status(500).json({ error: 'Erro interno do servidor' });
     }
 });
@@ -149,9 +210,9 @@ app.get('/admin', (req, res) => {
 });
 
 // Iniciar servidor
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Servidor rodando na porta ${PORT}`);
-    console.log(`📱 Acesse: http://localhost:${PORT}`);
+    console.log(`📱 Servidor pronto para receber conexões externas`);
 });
 
 module.exports = app;
