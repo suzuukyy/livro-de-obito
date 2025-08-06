@@ -62,6 +62,7 @@
                             <strong>Endereço:</strong> ${registro.endereco}<br>
                             <strong>Cemitério:</strong> ${registro.cemiterio}<br>
                             <strong>Timestamp:</strong> ${registro.timestamp}<br>
+                            <button onclick="apagarRegistroPorId(${registro.id})" style="background-color: #dc3545; color: white; border: none; padding: 8px 16px; margin-top: 10px; cursor: pointer;">🗑️ Apagar</button>
                         </div>
                     `;
                 });
@@ -77,6 +78,72 @@
         function limparResultados() {
             document.getElementById('resultado').innerHTML = '';
             document.getElementById('registros').innerHTML = '';
+        }
+        
+        // Função para apagar registro por ID
+        async function apagarRegistroPorId(registroId) {
+            console.log('🗑️ TENTANDO APAGAR REGISTRO ID:', registroId);
+            
+            try {
+                // Primeiro, buscar o registro para mostrar o nome na confirmação
+                const responseGet = await fetch('/api/registros');
+                const todosRegistros = await responseGet.json();
+                const registro = todosRegistros.find(r => r.id && r.id.toString() === registroId.toString());
+                
+                if (!registro) {
+                    alert('❌ Registro não encontrado!');
+                    return;
+                }
+                
+                // Confirmação
+                const confirmacao = confirm(`Tem certeza que deseja apagar o registro de ${registro.nome}?\n\nEsta ação não pode ser desfeita!`);
+                
+                if (!confirmacao) {
+                    return;
+                }
+                
+                console.log('🗑️ Apagando registro do banco de dados...');
+                
+                // Tentar apagar do banco de dados
+                const response = await fetch(`/api/registros/${registroId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    let resultado = {};
+                    let is204 = response.status === 204;
+                    if (!is204) {
+                        try {
+                            resultado = await response.json();
+                        } catch (e) {
+                            // corpo vazio ou não JSON
+                        }
+                    }
+                    
+                    if (is204 || resultado.success) {
+                        console.log('✅ Registro apagado do banco com sucesso!');
+                        alert(`✅ Registro de ${registro.nome} foi apagado com sucesso!`);
+                        
+                        // Recarregar registros do banco IMEDIATAMENTE
+                        setTimeout(() => {
+                            console.log('🔄 Recarregando lista após exclusão...');
+                            testarAPI();
+                            console.log('✅ Lista atualizada após exclusão!');
+                        }, 100);
+                        
+                        return;
+                    }
+                }
+                
+                throw new Error('Erro na resposta da API');
+                
+            } catch (error) {
+                console.error('❌ ERRO ao apagar registro:', error);
+                alert('❌ Erro ao apagar registro: ' + error.message);
+            }
         }
         
         // Carregar automaticamente ao abrir a página

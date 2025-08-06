@@ -277,6 +277,120 @@
             margin-bottom: 20px;
             text-align: center;
         }
-    </style>
+        
+        /* Estilos para botões de edição */
+        .btn-editar {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            margin-right: 5px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,123,255,0.2);
+        }
+        
+        .btn-editar:hover {
+            background: linear-gradient(135deg, #0056b3, #004085);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,123,255,0.3);
+        }
+        
+        .btn-salvar {
+            background: linear-gradient(135deg, #28a745, #1e7e34);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            margin-right: 5px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(40,167,69,0.2);
+        }
+        
+        .btn-salvar:hover {
+            background: linear-gradient(135deg, #1e7e34, #155724);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(40,167,69,0.3);
+        }
+        
+        .btn-cancelar {
+            background: linear-gradient(135deg, #6c757d, #545b62);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(108,117,125,0.2);
+        }
+        
+        .btn-cancelar:hover {
+            background: linear-gradient(135deg, #545b62, #383d41);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(108,117,125,0.3);
+        }
+        
+        /* Estilos para inputs de edição inline */
+        .form-control {
+            border: 2px solid #e9ecef;
+            border-radius: 4px;
+            padding: 6px 10px;
+            font-size: 13px;
+            transition: all 0.3s ease;
+            background-color: #fff;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+            background-color: #f8f9fa;
+        }
+        
+        /* Ajustar espaçamento na coluna de ações */
+        td {
+            vertical-align: middle;
+        }
+        
+        /* Responsividade para botões pequenos */
+        @media (max-width: 768px) {
+            .btn-editar, .btn-salvar, .btn-cancelar {
+                padding: 4px 8px;
+                font-size: 11px;
+                margin-right: 3px;
+            }
+            
+            .form-control {
+                padding: 4px 6px;
+                font-size: 12px;
+            }
+        }
+    /* Botão Configurar Email (discreto, canto inferior direito) */
+#btn-configurar-email{
+    position:fixed;
+    bottom:20px;
+    right:20px;
+    padding:6px 12px;
+    font-size:12px;
+    background:#6c757d;
+    color:#fff;
+    border:none;
+    border-radius:4px;
+    opacity:0.7;
+    cursor:pointer;
+    z-index:1000;
+}
+#btn-configurar-email:hover{
+    opacity:1;
+}
+</style>
 </body>
 </html>

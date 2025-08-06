@@ -489,9 +489,17 @@ async function carregarRegistros() {
         
         console.log('🔄 Registros ordenados:', registrosOrdenados.length);
         
-        // Configurar variáveis globais
-        registrosFiltrados = registrosOrdenados;
-        totalRegistros = registrosOrdenados.length;
+        // Definir conjunto de registros a exibir levando em conta filtros ativos
+        let registrosParaExibir;
+        if (buscaAtiva && registrosFiltrados.length > 0) {
+            registrosParaExibir = registrosFiltrados;
+        } else {
+            registrosParaExibir = registrosOrdenados;
+            // Caso não haja busca ativa, atualizamos registrosFiltrados para todos
+            registrosFiltrados = registrosOrdenados;
+        }
+
+        totalRegistros = registrosParaExibir.length;
         totalPaginas = Math.ceil(totalRegistros / registrosPorPagina);
         
         // Mostrar tabela
@@ -505,12 +513,18 @@ async function carregarRegistros() {
         // Calcular registros para a página atual
         const indiceInicio = (paginaAtual - 1) * registrosPorPagina;
         const indiceFim = Math.min(indiceInicio + registrosPorPagina, totalRegistros);
+
+        // Se página atual exceder total de páginas após filtragem, voltar para primeira
+        if (paginaAtual > totalPaginas) {
+            paginaAtual = 1;
+        }
         
         console.log(`📄 Exibindo registros ${indiceInicio + 1} a ${indiceFim} de ${totalRegistros}`);
         
-        // Adicionar registros à tabela
-        for (let i = indiceInicio; i < indiceFim; i++) {
-            const registro = registrosOrdenados[i];
+        // Adicionar registros à tabela (usar fatia correta)
+        const registrosPagina = registrosParaExibir.slice(indiceInicio, indiceFim);
+        registrosPagina.forEach((registro, idx) => {
+            const linhaNumero = indiceInicio + idx + 1;
             const linha = document.createElement('tr');
             
             // Formatar data do óbito
@@ -521,7 +535,7 @@ async function carregarRegistros() {
                                 new Date(registro.timestamp).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
             
             linha.innerHTML = `
-                <td><span class="numero-registro">${i + 1}</span></td>
+                <td><span class="numero-registro">${linhaNumero}</span></td>
                 <td><span class="servico-badge" style="background-color: #667eea">${registro.servicos}</span></td>
                 <td><span class="data-obito">${dataObito}</span></td>
                 <td>${registro.cartorio}</td>
@@ -529,13 +543,14 @@ async function carregarRegistros() {
                 <td>${registro.endereco}</td>
                 <td>${registro.cemiterio}</td>
                 <td><span class="data-registro">${dataRegistro}</span></td>
-                <td><button class="btn-apagar" onclick="apagarRegistroPorId('${registro.id}')" title="Apagar registro">
-                    🗑️ Apagar
-                </button></td>
+                <td>
+                    <button class="btn-editar" onclick="abrirFormularioEdicao('${registro.id}')">✏️ Editar</button>
+                    <button class="btn-apagar" onclick="apagarRegistroPorId('${registro.id}')">🗑️ Apagar</button>
+                </td>
             `;
             
             corpoTabela.appendChild(linha);
-        }
+        });
         
         // Atualizar controles de paginação
         if (totalRegistros > registrosPorPagina) {
@@ -1197,11 +1212,11 @@ async function gerarPDFPagina() {
         // Cabeçalho do documento
         doc.setFontSize(22);
         doc.setTextColor(44, 62, 80); // Cor primária
-        doc.text('SÃO FRANCISCO', pageWidth / 2, 18, { align: 'center' });
+        doc.text('SAO FRANCISCO', pageWidth / 2, 18, { align: 'center' });
         
         doc.setFontSize(12);
         doc.setTextColor(52, 152, 219); // Cor azul
-        doc.text('SERVIÇOS FUNERÁRIOS', pageWidth / 2, 26, { align: 'center' });
+        doc.text('SERVICOS FUNERARIOS', pageWidth / 2, 26, { align: 'center' });
         
         doc.setFontSize(10);
         doc.setTextColor(127, 140, 141);
@@ -1209,7 +1224,7 @@ async function gerarPDFPagina() {
         
         doc.setFontSize(16);
         doc.setTextColor(44, 62, 80);
-        doc.text('📖 Sistema de Livro de Óbito', pageWidth / 2, 42, { align: 'center' });
+        doc.text('Sistema de Livro de Obito', pageWidth / 2, 42, { align: 'center' });
         
         // Linha separadora
         doc.setDrawColor(189, 195, 199);
@@ -1222,10 +1237,10 @@ async function gerarPDFPagina() {
         const dataAtual = new Date().toLocaleDateString('pt-BR');
         const horaAtual = new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
         
-        doc.text(`Página ${paginaAtualPDF} de ${totalPaginasAtual}`, 20, 56);
+        doc.text(`Pagina ${paginaAtualPDF} de ${totalPaginasAtual}`, 20, 56);
         doc.text(`Registros ${indiceInicio + 1} a ${indiceFim} de ${totalRegistrosAtual}`, 20, 62);
-        doc.text(`Gerado em: ${dataAtual} às ${horaAtual}`, pageWidth - 20, 56, { align: 'right' });
-        doc.text(`Usuário: saofranciscof`, pageWidth - 20, 62, { align: 'right' });
+        doc.text(`Gerado em: ${dataAtual} as ${horaAtual}`, pageWidth - 20, 56, { align: 'right' });
+        doc.text(`Usuario: saofranciscof`, pageWidth - 20, 62, { align: 'right' });
         
         // Adicionar informação se há filtros ativos
         if (buscaAtiva) {
@@ -1404,49 +1419,22 @@ function exibirRegistrosDiretamente(registros) {
             <td>${registro.endereco}</td>
             <td>${registro.cemiterio}</td>
             <td><span class="data-registro">${dataRegistro}</span></td>
-            <td><button class="btn-apagar" onclick="apagarRegistroPorId('${registro.id}')" title="Apagar registro">
-                🗑️ Apagar
-            </button></td>
+            <td>
+                <button class="btn-editar" onclick="abrirFormularioEdicao('${registro.id}')">Editar</button>
+                <button class="btn-apagar" onclick="apagarRegistroPorId('${registro.id}')" title="Apagar registro">
+                    Apagar
+                </button>
+            </td>
         `;
         
         corpoTabela.appendChild(linha);
     });
     
-    console.log('✅ REGISTROS EXIBIDOS COM SUCESSO NA TABELA!');
-    console.log(`📊 Total de ${registrosOrdenados.length} registros exibidos`);
+    console.log(' REGISTROS EXIBIDOS COM SUCESSO NA TABELA!');
+    console.log(` Total de ${registrosOrdenados.length} registros exibidos`);
 }
 
-// Função para atualizar exibição dos registros na tabela com paginação (apenas localStorage)
-function atualizarExibicaoRegistros() {
-    console.log('Atualizando exibição de registros do localStorage...');
-    
-    // Usar apenas localStorage (não chamar carregarRegistros para evitar loop)
-    const registros = JSON.parse(localStorage.getItem('registros-obito') || '[]');
-    const corpoTabela = document.getElementById('corpo-tabela');
-    
-    if (!corpoTabela) {
-        console.log('Tabela não encontrada na página atual');
-        return;
-    }
-    
-    // Ordenar registros por data de óbito (decrescente - mais recentes primeiro)
-    const registrosOrdenados = registros.sort((a, b) => {
-        const dataA = new Date(a.data);
-        const dataB = new Date(b.data);
-        return dataB - dataA; // Ordem decrescente
-    });
-    
-    // Atualizar registros filtrados com registros ordenados
-    registrosFiltrados = registrosOrdenados;
-    
-    // Exibir registros da página atual
-    exibirPaginaAtual();
-    
-    // Atualizar controles de paginação
-    atualizarPaginacao();
-    
-    console.log(`Total de registros (localStorage): ${registros.length}, Página atual: ${paginaAtual}`);
-}
+// ...
 
 // Função para exibir registros da página atual
 function exibirPaginaAtual() {
@@ -1490,9 +1478,12 @@ function exibirPaginaAtual() {
             <td>${registro.endereco}</td>
             <td>${registro.cemiterio}</td>
             <td><span class="data-registro">${dataRegistro}</span></td>
-            <td><button class="btn-apagar" onclick="apagarRegistroPorId('${registro.id}')" title="Apagar registro">
-                🗑️ Apagar
-            </button></td>
+            <td>
+                <button class="btn-editar" onclick="abrirFormularioEdicao('${registro.id}')">Editar</button>
+                <button class="btn-apagar" onclick="apagarRegistroPorId('${registro.id}')" title="Apagar registro">
+                    Apagar
+                </button>
+            </td>
         `;
         
         corpoTabela.appendChild(linha);
@@ -1618,9 +1609,22 @@ async function apagarRegistroPorId(registroId) {
         });
         
         if (response.ok) {
-            const resultado = await response.json();
-            if (resultado.success) {
+            let resultado = {};
+            let is204 = response.status === 204;
+            if (!is204) {
+                try {
+                    resultado = await response.json();
+                } catch (e) {
+                    // corpo vazio ou não JSON
+                }
+            }
+            
+            if (is204 || resultado.success) {
                 console.log('✅ Registro apagado do banco com sucesso!');
+                
+                // Após apagar do banco, tentar apagar do email também
+                await apagarRegistroDoEmail(registro);
+                
                 alert(`✅ Registro de ${registro.nome} foi apagado com sucesso!`);
                 
                 // Recarregar registros do banco IMEDIATAMENTE
@@ -1765,3 +1769,165 @@ document.addEventListener('DOMContentLoaded', function() {
         inicializarEmailJS();
     }
 });
+
+// FUNÇÕES DE EDIÇÃO DE REGISTROS
+
+// Função para abrir formulário de edição inline
+function abrirFormularioEdicao(registroId) {
+    console.log('🔧 Abrindo edição para o registro:', registroId);
+    
+    // Buscar os dados atuais do registro
+    fetch(`/api/registros/${registroId}`)
+        .then(response => response.json())
+        .then(registro => {
+            // Encontrar a linha da tabela que contém este registro
+            const linhas = document.querySelectorAll('#corpo-tabela tr');
+            linhas.forEach(linha => {
+                if (linha.innerHTML.includes(registroId)) {
+                    // Formatar a data para o input type="date"
+                    const dataFormatada = registro.data ? registro.data.split('T')[0] : '';
+                    
+                    // Criar o HTML do formulário de edição
+                    linha.innerHTML = `
+                        <td><span class="numero-registro">${registro.id}</span></td>
+                        <td><input type="text" value="${registro.servicos || ''}" id="edit-servicos-${registro.id}" class="form-control" style="width: 100%; padding: 5px;"></td>
+                        <td><input type="date" value="${dataFormatada}" id="edit-data-${registro.id}" class="form-control" style="width: 100%; padding: 5px;"></td>
+                        <td><input type="text" value="${registro.cartorio || ''}" id="edit-cartorio-${registro.id}" class="form-control" style="width: 100%; padding: 5px;"></td>
+                        <td><input type="text" value="${registro.nome || ''}" id="edit-nome-${registro.id}" class="form-control" style="width: 100%; padding: 5px;"></td>
+                        <td><input type="text" value="${registro.endereco || ''}" id="edit-endereco-${registro.id}" class="form-control" style="width: 100%; padding: 5px;"></td>
+                        <td><input type="text" value="${registro.cemiterio || ''}" id="edit-cemiterio-${registro.id}" class="form-control" style="width: 100%; padding: 5px;"></td>
+                        <td><span class="data-registro">${new Date(registro.timestamp).toLocaleDateString('pt-BR')}</span></td>
+                        <td>
+                            <button class="btn-salvar" onclick="salvarEdicao('${registro.id}')" style="background: #28a745; color: white; border: none; padding: 5px 10px; margin-right: 5px; border-radius: 3px; cursor: pointer;">✅ Salvar</button>
+                            <button class="btn-cancelar" onclick="window.location.reload()" style="background: #6c757d; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">❌ Cancelar</button>
+                        </td>
+                    `;
+                }
+            });
+        })
+        .catch(error => {
+            console.error('❌ Erro ao carregar dados para edição:', error);
+            alert('❌ Erro ao carregar dados para edição');
+        });
+}
+
+// Função para salvar as alterações
+async function salvarEdicao(registroId) {
+    console.log('💾 Salvando edição do registro:', registroId);
+    
+    try {
+        // Coletar dados dos inputs
+        const dadosAtualizados = {
+            servicos: document.getElementById(`edit-servicos-${registroId}`).value,
+            data: document.getElementById(`edit-data-${registroId}`).value,
+            cartorio: document.getElementById(`edit-cartorio-${registroId}`).value,
+            nome: document.getElementById(`edit-nome-${registroId}`).value,
+            endereco: document.getElementById(`edit-endereco-${registroId}`).value,
+            cemiterio: document.getElementById(`edit-cemiterio-${registroId}`).value,
+            timestamp: Date.now() // Atualizar timestamp da edição
+        };
+        
+        // Validação básica
+        if (!dadosAtualizados.nome.trim()) {
+            alert('❌ O nome é obrigatório!');
+            return;
+        }
+        
+        console.log('📤 Enviando dados atualizados:', dadosAtualizados);
+        
+        // Enviar PUT para o backend
+        const response = await fetch(`/api/registros/${registroId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(dadosAtualizados)
+        });
+        
+        if (response.ok) {
+            const resultado = await response.json();
+            console.log('✅ Registro atualizado com sucesso:', resultado);
+            alert(`✅ Registro de ${dadosAtualizados.nome} foi atualizado com sucesso!`);
+            
+            // Recarregar a tabela para mostrar os dados atualizados
+            setTimeout(async () => {
+                const responseAtualizada = await fetch('/api/registros');
+                const registrosAtualizados = await responseAtualizada.json();
+                exibirRegistrosDiretamente(registrosAtualizados);
+                console.log('🔄 Tabela atualizada após edição!');
+            }, 100);
+            
+        } else {
+            throw new Error('Erro na resposta da API');
+        }
+        
+    } catch (error) {
+        console.error('❌ Erro ao salvar edição:', error);
+        alert('❌ Erro ao salvar edição: ' + error.message);
+    }
+}
+
+// Função para apagar registro do sistema de email (FormSubmit)
+async function apagarRegistroDoEmail(registro) {
+    // Verificar se o email de backup está configurado
+    if (!emailBackupConfigurado || !emailBackupDestino) {
+        console.log('Email backup não configurado - pulando exclusão no email');
+        return;
+    }
+    
+    try {
+        console.log('Tentando apagar registro do email:', registro.nome);
+        
+        // Criar formulário para enviar notificação de exclusão via FormSubmit
+        const form = document.createElement('form');
+        form.action = `${EMAIL_CONFIG.webhookUrl}${emailBackupDestino}`;
+        form.method = 'POST';
+        form.style.display = 'none';
+        
+        // Preparar dados da notificação de exclusão
+        const campos = {
+            '_subject': `Exclusão de Registro - ${registro.nome} - São Francisco`,
+            '_template': 'table',
+            '_captcha': 'false',
+            'sistema': 'Livro de Óbito São Francisco',
+            'tipo': 'Notificação de Exclusão de Registro',
+            'nome_falecido': registro.nome,
+            'data_obito': new Date(registro.data).toLocaleDateString('pt-BR'),
+            'servicos': registro.servicos,
+            'cartorio': registro.cartorio,
+            'endereco': registro.endereco,
+            'cemiterio': registro.cemiterio,
+            'data_registro_original': new Date(registro.timestamp).toLocaleDateString('pt-BR') + ' às ' + new Date(registro.timestamp).toLocaleTimeString('pt-BR'),
+            'data_exclusao': new Date().toLocaleDateString('pt-BR') + ' às ' + new Date().toLocaleTimeString('pt-BR'),
+            'mensagem': 'Este email notifica que um registro foi excluído do Sistema de Livro de Óbito da São Francisco. Esta é apenas uma notificação de exclusão e não remove automaticamente o registro de sua caixa de entrada. Se desejar remover o registro original, você precisará fazê-lo manualmente.'
+        };
+        
+        // Adicionar campos ao formulário
+        Object.keys(campos).forEach(key => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = key;
+            input.value = campos[key];
+            form.appendChild(input);
+        });
+        
+        // Adicionar ao DOM e enviar
+        document.body.appendChild(form);
+        
+        // Enviar formulário
+        form.submit();
+        
+        // Remover formulário após envio
+        setTimeout(() => {
+            if (document.body.contains(form)) {
+                document.body.removeChild(form);
+            }
+        }, 2000);
+        
+        console.log('Notificação de exclusão enviada com sucesso via FormSubmit');
+        
+    } catch (error) {
+        console.error('Erro ao enviar notificação de exclusão por email:', error);
+        // Não mostrar erro ao usuário pois a exclusão principal já foi bem-sucedida
+    }
+}
