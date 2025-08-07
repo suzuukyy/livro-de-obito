@@ -1388,7 +1388,7 @@ function exibirRegistrosDiretamente(registros) {
     }
     
     // Ordenar registros por data (mais recentes primeiro)
-    const registrosOrdenados = registros.sort((a, b) => {
+    const registrosOrdenados = [...registros].sort((a, b) => {
         const dataA = new Date(a.data);
         const dataB = new Date(b.data);
         return dataB - dataA;
@@ -1412,12 +1412,12 @@ function exibirRegistrosDiretamente(registros) {
         
         linha.innerHTML = `
             <td><span class="numero-registro">${index + 1}</span></td>
-            <td><span class="servico-badge" style="background-color: #667eea">${registro.servicos}</span></td>
+            <td><span class="servico-badge" style="background-color: #667eea">${registro.servicos || ''}</span></td>
             <td><span class="data-obito">${dataObito}</span></td>
-            <td>${registro.cartorio}</td>
-            <td><strong>${registro.nome}</strong></td>
-            <td>${registro.endereco}</td>
-            <td>${registro.cemiterio}</td>
+            <td>${registro.cartorio || ''}</td>
+            <td><strong>${registro.nome || ''}</strong></td>
+            <td>${registro.endereco || ''}</td>
+            <td>${registro.cemiterio || ''}</td>
             <td><span class="data-registro">${dataRegistro}</span></td>
             <td>
                 <button class="btn-editar" onclick="abrirFormularioEdicao('${registro.id}')">Editar</button>
@@ -1778,36 +1778,56 @@ function abrirFormularioEdicao(registroId) {
     
     // Buscar os dados atuais do registro
     fetch(`/api/registros/${registroId}`)
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Erro na resposta: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(registro => {
             // Encontrar a linha da tabela que contém este registro
             const linhas = document.querySelectorAll('#corpo-tabela tr');
+            let linhaEncontrada = false;
+            
             linhas.forEach(linha => {
-                if (linha.innerHTML.includes(registroId)) {
-                    // Formatar a data para o input type="date"
-                    const dataFormatada = registro.data ? registro.data.split('T')[0] : '';
-                    
-                    // Criar o HTML do formulário de edição
-                    linha.innerHTML = `
-                        <td><span class="numero-registro">${registro.id}</span></td>
-                        <td><input type="text" value="${registro.servicos || ''}" id="edit-servicos-${registro.id}" class="form-control" style="width: 100%; padding: 5px;"></td>
-                        <td><input type="date" value="${dataFormatada}" id="edit-data-${registro.id}" class="form-control" style="width: 100%; padding: 5px;"></td>
-                        <td><input type="text" value="${registro.cartorio || ''}" id="edit-cartorio-${registro.id}" class="form-control" style="width: 100%; padding: 5px;"></td>
-                        <td><input type="text" value="${registro.nome || ''}" id="edit-nome-${registro.id}" class="form-control" style="width: 100%; padding: 5px;"></td>
-                        <td><input type="text" value="${registro.endereco || ''}" id="edit-endereco-${registro.id}" class="form-control" style="width: 100%; padding: 5px;"></td>
-                        <td><input type="text" value="${registro.cemiterio || ''}" id="edit-cemiterio-${registro.id}" class="form-control" style="width: 100%; padding: 5px;"></td>
-                        <td><span class="data-registro">${new Date(registro.timestamp).toLocaleDateString('pt-BR')}</span></td>
-                        <td>
-                            <button class="btn-salvar" onclick="salvarEdicao('${registro.id}')" style="background: #28a745; color: white; border: none; padding: 5px 10px; margin-right: 5px; border-radius: 3px; cursor: pointer;">✅ Salvar</button>
-                            <button class="btn-cancelar" onclick="window.location.reload()" style="background: #6c757d; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">❌ Cancelar</button>
-                        </td>
-                    `;
+                // Verificar se esta linha contém o registro correto
+                const celulas = linha.querySelectorAll('td');
+                if (celulas.length > 0) {
+                    // Procurar pelo ID do registro na primeira célula
+                    const primeiraCelula = celulas[0];
+                    if (primeiraCelula && primeiraCelula.textContent.includes(registroId)) {
+                        linhaEncontrada = true;
+                        
+                        // Formatar a data para o input type="date"
+                        const dataFormatada = registro.data ? registro.data.split('T')[0] : '';
+                        
+                        // Criar o HTML do formulário de edição
+                        linha.innerHTML = `
+                            <td><span class="numero-registro">${registro.id}</span></td>
+                            <td><input type="text" value="${registro.servicos || ''}" id="edit-servicos-${registro.id}" class="form-control" style="width: 100%; padding: 5px;"></td>
+                            <td><input type="date" value="${dataFormatada}" id="edit-data-${registro.id}" class="form-control" style="width: 100%; padding: 5px;"></td>
+                            <td><input type="text" value="${registro.cartorio || ''}" id="edit-cartorio-${registro.id}" class="form-control" style="width: 100%; padding: 5px;"></td>
+                            <td><input type="text" value="${registro.nome || ''}" id="edit-nome-${registro.id}" class="form-control" style="width: 100%; padding: 5px;"></td>
+                            <td><input type="text" value="${registro.endereco || ''}" id="edit-endereco-${registro.id}" class="form-control" style="width: 100%; padding: 5px;"></td>
+                            <td><input type="text" value="${registro.cemiterio || ''}" id="edit-cemiterio-${registro.id}" class="form-control" style="width: 100%; padding: 5px;"></td>
+                            <td><span class="data-registro">${new Date(registro.timestamp).toLocaleDateString('pt-BR')}</span></td>
+                            <td>
+                                <button class="btn-salvar" onclick="salvarEdicao('${registro.id}')" style="background: #28a745; color: white; border: none; padding: 5px 10px; margin-right: 5px; border-radius: 3px; cursor: pointer;">✅ Salvar</button>
+                                <button class="btn-cancelar" onclick="window.location.reload()" style="background: #6c757d; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">❌ Cancelar</button>
+                            </td>
+                        `;
+                    }
                 }
             });
+            
+            if (!linhaEncontrada) {
+                console.error('❌ Linha do registro não encontrada na tabela');
+                alert('❌ Erro ao localizar registro na tabela');
+            }
         })
         .catch(error => {
             console.error('❌ Erro ao carregar dados para edição:', error);
-            alert('❌ Erro ao carregar dados para edição');
+            alert('❌ Erro ao carregar dados para edição: ' + error.message);
         });
 }
 
@@ -1824,7 +1844,7 @@ async function salvarEdicao(registroId) {
             nome: document.getElementById(`edit-nome-${registroId}`).value,
             endereco: document.getElementById(`edit-endereco-${registroId}`).value,
             cemiterio: document.getElementById(`edit-cemiterio-${registroId}`).value,
-            timestamp: Date.now() // Atualizar timestamp da edição
+            timestamp: new Date().toISOString() // Atualizar timestamp da edição
         };
         
         // Validação básica
@@ -1847,18 +1867,25 @@ async function salvarEdicao(registroId) {
         if (response.ok) {
             const resultado = await response.json();
             console.log('✅ Registro atualizado com sucesso:', resultado);
+            
+            // Mostrar mensagem de sucesso
             alert(`✅ Registro de ${dadosAtualizados.nome} foi atualizado com sucesso!`);
             
             // Recarregar a tabela para mostrar os dados atualizados
-            setTimeout(async () => {
+            try {
                 const responseAtualizada = await fetch('/api/registros');
                 const registrosAtualizados = await responseAtualizada.json();
                 exibirRegistrosDiretamente(registrosAtualizados);
                 console.log('🔄 Tabela atualizada após edição!');
-            }, 100);
+            } catch (error) {
+                console.error('❌ Erro ao recarregar registros:', error);
+                // Fallback: recarregar a página
+                window.location.reload();
+            }
             
         } else {
-            throw new Error('Erro na resposta da API');
+            const errorText = await response.text();
+            throw new Error(`Erro na resposta da API: ${response.status} - ${errorText}`);
         }
         
     } catch (error) {
